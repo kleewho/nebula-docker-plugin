@@ -17,12 +17,12 @@
 package nebula.plugin.docker
 
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
-import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
 import com.bmuschko.gradle.docker.tasks.image.Dockerfile
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.tasks.Exec
 import org.gradle.api.artifacts.Configuration
 
 /**
@@ -59,23 +59,29 @@ class NebulaDockerPlugin implements Plugin<Project>, Strings, NebulaDockerSensib
                 force = true
             }
 
-            project.tasks.create(name: "pushImage${envir}${tags}", type: DockerPushImage) { task ->
+            project.tasks.create(name: "pushImage${envir}${tags}", type: Exec) { task ->
+                group = 'docker'
+                description = 'Pushes image to docker repository. You have to provide DOCKER_PASSWORD and DOCKER_LOGIN as env ' +
+                        'variables to use it.'
+                executable 'sh'
                 dependsOn project.tasks["dockerTagImage${envir}${tags}"]
-                task.conventionMapping.imageName = { project.tasks["dockerTagImage${envir}${tags}"].getRepository() }
-                task.conventionMapping.tag = { project.tasks["dockerTagImage${envir}${tags}"].getTag() }
+                args '-c', "docker login -p $System.env.DOCKER_PASSWORD -u $System.env.DOCKER_LOGIN &&" +
+                        "docker push " + project.tasks["dockerTagImage${envir}${tags}"].getRepository() + ":" + project.tasks["dockerTagImage${envir}${tags}"].getTag() + "&&" +
+                        'docker logout'
             }
         }
     }
 
     protected Task taskCreateDockerfile(Project project) {
+        def extension = project.nebulaDocker
         project.tasks.create(name: 'createDockerfile', type: Dockerfile) { task ->
             destFile = project.file(project.nebulaDocker.dockerFile)
-            dependsOn project.tasks['distTar']
+            dependsOn project.tasks[extension.archiveTaskName]
             dependsOn project.tasks['dockerCopyDistResources']
             from "${project.nebulaDocker.dockerBase}"
             maintainer project.nebulaDocker.maintainerEmail
 
-            addFile "${project.distTar.archiveName}", '/'
+            addFile "${project.tasks[extension.archiveTaskName].archiveName}", '/'
             runCommand "ln -s '${-> project.nebulaDocker.appDir}' '${project.nebulaDocker.appDirLatest}'"
             entryPoint "${-> project.nebulaDocker.appDir}/bin/${project.applicationName}"
             if (project.nebulaDocker.dockerImage) {

@@ -17,7 +17,18 @@
 
 plugins {
     id 'nebula.plugin-plugin' version '5.17.2'
+    id 'com.glantus.glantus-s3-plugin' version '0.1.0'
 }
+
+allprojects {
+    beforeEvaluate { project ->
+        project.group = 'com.glantus'
+    }
+}
+
+targetCompatibility = 1.8
+sourceCompatibility = 1.8
+version = 'v1.1.1-glantus'
 
 dependencies {
     compile 'com.bmuschko:gradle-docker-plugin:3.+'
@@ -32,20 +43,26 @@ facets {
 
 description 'Gradle Docker Package Plugin'
 
+
 contacts {
-    'me@liviutudor.com' {
-        moniker 'Liviu Tudor'
-        github 'liviutudor'
+    'lukasz.klich@glantus.com' {
+        github 'kleewho'
     }
 }
 
 pluginBundle {
     plugins {
         docker {
-            id = 'nebula.docker'
+            id = 'com.glantus.glantus-docker'
             displayName = 'Gradle Docker Package Plugin'
             description = project.description
-            tags = ['nebula', 'docker']
+            tags = ['glantus', 'docker']
+
         }
+    }
+
+    mavenCoordinates {
+        groupId = "com.glantus"
+        artifactId = "glantus-docker"
     }
 }

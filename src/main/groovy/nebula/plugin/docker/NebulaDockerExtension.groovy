@@ -90,6 +90,11 @@ class NebulaDockerExtension {
     def Closure<String> tagVersion
 
     /**
+     * This will be the task that createDockerfile tasks will depend on. The output.archiveName will be copied to docker image
+     */
+    def String archiveTaskName = 'distTar'
+
+    /**
      * Defines a property which returns all the environments defined in the {@link #dockerRepo}.
      * This is basically a set of all the keys present in the {@link #dockerRepo} set.
      *
